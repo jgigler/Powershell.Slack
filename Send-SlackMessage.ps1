@@ -1,51 +1,25 @@
 <#
 .Synopsis
-   Send Messages to a Slack channel
-.DESCRIPTION
-   Long description
+   Returns a hashtable containing the configuration for sending slack messages to web hook integrations.
+
 .EXAMPLE
-   Send-SlackMessage -Token xxxx-xxxxx-xxxxx -Channel "Operations" -Text "Slack Test Message!" -Uri <Webhook URL> -UserName "Powershell Slack Bot"
+   Send-SlackNotification -Url "https://yourname.slack.com/path/to/hookintegrations" -Notification $Notification
 #>
-function Send-SlackMessage
+function Send-SlackNotification
 {
     [CmdletBinding()]
     Param
     (
-        # Text of the message to send
         [Parameter(Mandatory=$true,
-                   ValueFromPipeline=$true,
                    Position=0)]
-        $Text,
+        [String]
+        $Url,
 
-        # Authentication Token
-        [Parameter(Mandatory=$false,
+        [Parameter(Mandatory=$true,
+                   ValueFromPipeline = $true,
                    Position=1)]
-        [String]
-        $Token,
-
-        # Channel to send message to. Can be a public channel, private group or IM channel. Can be an encoded ID, or a name.
-        [Parameter(Mandatory=$true,
-                   Position=2)]
-        [String]
-        $Channel,
-
-        # Uri to pass into the Invoke-RestMethod cmdlet. Will be your <customerName>.slack.com
-        [Parameter(Mandatory=$true,
-                   Position=3)]
-        [String]
-        $WebhookUrl,
-
-        # Name of bot.
-        [String]
-        $UserName = "Powershell Slack Bot",
-
-        # URL to an image to use as the icon for this message.
-        [String]
-        $IconUrl,
-
-        # Emoji to use as the icon for this message. Overrides parameter IconUrl
-        [String]
-        $IconEmoji
+        [System.Collections.Hashtable]
+        $Notification
     )
 
     Begin
@@ -53,52 +27,103 @@ function Send-SlackMessage
     }
     Process
     {
-        if ($IconURL)
-        {
-            $Body = @{
-                token = $Token;
-                channel = $channel;
-                text = $Text;
-                username = $UserName;
-                icon_url = $IconUrl;
-            }
-        }
-
-        elseif ($IconEmoji)
-        {
-            $Body = @{
-                token = $Token;
-                channel = $channel;
-                text = $Text;
-                username = $UserName;
-                icon_emoji = $IconEmoji;
-            }
-        }
-
-        else
-        {
-            $Body = @{
-                token = $Token;
-                channel = $channel;
-                text = $Text;
-                username = $UserName;
-            }
-        }
-
         try
         {
-            $Response = Invoke-RestMethod -Method Post -Uri $WebhookUrl -Body (ConvertTo-Json $Body)
-
-            if ($Response.ok -eq $false)
-            {
-                Write-Error $Response.error
-            }
+            Invoke-RestMethod -Method POST -Uri $Url -Body ($Notification | ConvertTo-Json -Depth 4)
         }
 
         catch
         {
             Write-Warning $_
         }
+    }
+    End
+    {
+    }
+}
+
+<#
+.Synopsis
+   Creates a rich notification to be posted in a slack channel.
+.DESCRIPTION
+   Long description
+.EXAMPLE
+   New-SlackRichNotification -Fallback "Your app sucks it should process attachments" -Title "Service Error" -Value "Service down for server contoso1" -Severity danger -channel "Operations" -UserName "Slack Powershell Bot"
+#>
+function New-SlackRichNotification
+{
+    [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
+    Param
+    (
+        # Title of the notification
+        [Parameter(Mandatory=$true,
+                   Position=0)]
+        [String]
+        $Fallback,
+
+        # Title of the notification
+        [Parameter(Mandatory=$true,
+                   Position=1)]
+        [String]
+        $Title,
+
+        # Value or message of the notification you would like to send
+        [Parameter(Mandatory=$true,
+                   Position=2)]
+        [String]
+        $Value,
+
+        # Value or message of the notification you would like to send
+        [Parameter(Mandatory=$true,
+                   Position=3)]
+        [ValidateSet("good", "warning", "danger")]
+        [String]
+        $Severity,
+
+        # Channel to send message to. Can be a public channel, private group or IM channel. Can be an encoded ID, or a name.
+        [Parameter(Mandatory=$true,
+                   Position=4)]
+        [String]
+        $Channel,
+
+        # Name of the user posting the message (bot name).
+        [Parameter(Mandatory=$true,
+                   Position=5)]
+        [String]
+        $UserName,
+
+        # Url of the icon or image you would like.
+        [Parameter(Mandatory=$false,
+                   Position=6)]
+        [String]
+        $IconUrl
+    )
+
+    Begin
+    {
+    }
+    Process
+    {
+        $SlackNotification = @{
+            channel = $Channel
+            username = $UserName
+            icon_url = $IconUrl
+            attachments = @(
+                @{
+                    fallback = $Fallback
+                    color = $Severity
+                    fields = @(
+                        @{
+                            title = $Title
+                            value = $Value
+                        }
+                    )
+                }    
+            )
+        }
+
+        Write-Output $SlackNotification
     }
     End
     {
