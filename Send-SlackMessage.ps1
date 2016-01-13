@@ -129,15 +129,27 @@ function New-SlackRichNotification
         [String]
         $Fallback,
 
-        [Parameter(Mandatory=$true,
+        <#[Parameter(Mandatory=$true,
                    Position=1)]
         [String]
         $Title,
-
+        
         [Parameter(Mandatory=$true,
                    Position=2)]
         [String]
         $Value,
+        #>
+        [Parameter(
+            Mandatory=$true,
+            Position=2
+        )]
+        [String]
+        $Text,
+        
+        [Parameter(Mandatory=$true,
+                   Position=2)]
+        [Array]
+        $Fields,
 
         [Parameter(Mandatory=$true,
                    Position=3)]
@@ -167,18 +179,14 @@ function New-SlackRichNotification
     Process
     {
         $SlackNotification = @{
+            text = $Text
             username = $UserName
             icon_url = $IconUrl
             attachments = @(
                 @{
                     fallback = $Fallback
                     color = $Severity
-                    fields = @(
-                        @{
-                            title = $Title
-                            value = $Value
-                        }
-                    )
+                    fields = $Fields
                 }    
             )
         }
