@@ -2,7 +2,7 @@
 .Synopsis
    Returns a hashtable containing the configuration for sending slack messages to web hook integrations.
 .DESCRIPTION
-   Sends a JSON payload to the designated webhook URL
+   Takes a Hashtable and converts it to JSON before it sends it to the designated webhook URL.
 .EXAMPLE
    Send-SlackNotification -Url "https://yourname.slack.com/path/to/hookintegrations" -Notification $Notification
 
@@ -57,13 +57,16 @@ function Send-SlackNotification
 .Synopsis
    Creates a rich notification (Attachment) to be posted in a slack channel.
 .DESCRIPTION
-   Outputs a Hashtable that can be converted to JSON and sent to a Webhook in Slack. 
+   Used to create Atachment message payloads for Slack. Attachemnts are a way of crafting richly-formatted messages in Slack. They can be as simple as a single plain text message, to as complex as a multi-line message with pictures, links and tables. 
 
 .PARAMETER Fallback
-A plain-text summary of the attachment(value parameter). This text will be used in clients that don't show formatted text (eg. IRC, mobile notifications) and should not contain any markup.
+A plain-text summary of the attachment. This text will be used in clients that don't show formatted text (eg. IRC, mobile notifications) and should not contain any markup.
 
 .PARAMETER Severity
-This value is used to color the border along the left side of the message attachment.
+This value is used to color the border along the left side of the message attachment. At this stage only good, warning and danger are accepted in this function; even though the Slack API allows for Hex Colour Code.
+
+.PARAMETER Pretext
+This is optional text that appears above the message attachment block.
 
 .PARAMETER AuthorName
 Small text used to display the author's name.
@@ -177,12 +180,17 @@ function New-SlackRichNotification
                      "warning", 
                      "danger"
                      )]
+        [Alias("Color","Colour")]
         [String]
         $Severity,
 
         [Parameter(Mandatory=$false)]
         [String]
         $AuthorName,
+
+        [Parameter(Mandatory=$false)]
+        [String]
+        $Pretext,
 
         [Parameter(Mandatory=$false)]
         [String]
