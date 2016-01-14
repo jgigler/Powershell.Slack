@@ -62,14 +62,36 @@ function Send-SlackNotification
 .PARAMETER Fallback
 A plain-text summary of the attachment(value parameter). This text will be used in clients that don't show formatted text (eg. IRC, mobile notifications) and should not contain any markup.
 
+.PARAMETER Severity
+This value is used to color the border along the left side of the message attachment.
+
+.PARAMETER AuthorName
+Small text used to display the author's name.
+
+.PARAMETER AuthorLink
+A valid URL that will hyperlink the AuthorName text mentioned above. Will only work if AuthorName is present.
+
+.PARAMETER AuthorIcon
+A valid URL that displays a small 16x16px image to the left of the AuthorName text. Will only work if AuthorName is present.
+
 .PARAMETER Title
 The title is displayed as larger, bold text near the top of the message attachment.
 
 .PARAMETER TitleLink
 If the title link is specified then it turns the Title into a hyperlink that the user can click. 
 
-.PARAMETER Severity
-This value is used to color the border along the left side of the message attachment
+.PARAMETER Text
+This is the main text in a message attachment, and can contain standard message markup. Not to be confused with Pretext which would appear above this.
+
+.PARAMETER ImageURL
+A valid URL to an image file that will be displayed inside a message attachment.
+
+.PARAMETER ThumbURL
+A valid URL to an image file that will be displayed as a thumbnail on the right side of a message attachment.
+
+.PARAMETER Fields
+Fields are defined as an array, and hashtables contained within it will be displayed in a table inside the message attachment.
+Each hashtable inside the array must contain a "title" parameter and a "value" parameter. Optionally it may also contain "Short" which is a boolean parameter.
 
 .PARAMETER Channel
 Channel to send message to. Can be a public channel, private group or IM channel. Can be an encoded ID, or a name.
@@ -80,17 +102,10 @@ Can be used to change the name of the bot. If not specified, the custom Webhook 
 .PARAMETER IconUrl
 URL to an image to use as the icon for this message
 
-
-.PARAMETER Text
-This is the main text in a message attachment, and can contain standard message markup. Not to be confused with Pretext which would appear above this.
-
-.NOTES
-This function does not utilise the full capability of Slack attachments and some modification may be required if you wish to extend it. 
-
 .EXAMPLE
    New-SlackRichNotification -Fallback "Your app sucks it should process attachments" -Title "Service Error" -Value "Service down for server contoso1" -Severity danger -channel "Operations" -UserName "Slack Powershell Bot"
    
-   This command would generate the following output:
+   This command would generate the following output in Powershell:
 -------------------------------------------------------------------------------
 
 Name                           Value                                                                                                                                                                                  
@@ -112,6 +127,29 @@ color                          danger
 fallback                       Your app sucks it should process attachments                                                                                                                                           
 fields                         {System.Collections.Hashtable}
 
+
+.EXAMPLE
+$MyFields = @(
+    @{
+        title = 'Assigned To'
+        value = 'John Doe'
+        short = 'true'
+    }
+    @{
+        title = 'Priority'
+        value = 'Super Critical!'
+        short = 'true'
+    }
+)
+
+$notification = New-SlackRichNotification -Fallback "A plaintext message" -Title "Description" -Text "Some text that will appear above the Fields" -Fields $MyFields
+Send-SlackNotification -Url "https://yourname.slack.com/path/to/hookintegrations" -Notification $notification
+
+----------------------------------------------------------------------
+In this example, $MyFields is defined as an Array. Inside that array are two separate hashtables with the two parameters that are required for a field. 
+Since the "short" boolean parameter has been speified these two fields will be displayed next to each other in Slack. 
+
+
 .LINK
 https://api.slack.com/docs/attachments
 
@@ -129,12 +167,12 @@ function New-SlackRichNotification
     (
         #<Attachment>
         [Parameter(Mandatory=$true,
-                   Position=0)]
+                    Position=0
+                    )]
         [String]
         $Fallback,
         
-        [Parameter(Mandatory=$false,
-                    Position=1)]
+        [Parameter(Mandatory=$false)]
         [ValidateSet("good",
                      "warning", 
                      "danger"
@@ -142,39 +180,31 @@ function New-SlackRichNotification
         [String]
         $Severity,
 
-        [Parameter(Mandatory=$false,
-                    ParameterSetName='Author Set'
-                    )]
+        [Parameter(Mandatory=$false)]
         [String]
         $AuthorName,
 
-        [Parameter(Mandatory=$false,
-                    ParameterSetName='Author Set'
-                    )]
+        [Parameter(Mandatory=$false)]
         [String]
         $AuthorLink,
 
-        [Parameter(Mandatory=$false,
-                    ParameterSetName='Author Set'
-                    )]
+        [Parameter(Mandatory=$false)]
         [String]
         $AuthorIcon,
 
-        [Parameter(Mandatory=$false, #this could be mandatory. This needs testing. 
-                   ParameterSetName='Title Set'
-                   )]
+        [Parameter(Mandatory=$false)] 
         [String]
         $Title,
 
-        [Parameter(Mandatory=$false,
-                   ParameterSetName='Title Set'
-                   )]
+        [Parameter(Mandatory=$false)]
         [String]
         $TitleLink,
         
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory=$false,
+                    Position=1
+                    )]
         [String]
-        $Text, #may be mandatory.
+        $Text,
 
         [Parameter(Mandatory=$false)]
         [String]
@@ -235,10 +265,3 @@ function New-SlackRichNotification
     {
     }
 }
-
-
-<#
-Change Notes:
-    - Removing positional paramater definition of optional parameters.
-
-#>
