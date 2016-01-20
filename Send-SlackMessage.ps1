@@ -175,14 +175,21 @@ function New-SlackRichNotification
         [String]
         $Fallback,
         
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory=$true,
+                    ParameterSetName='SeverityOrColour')]
         [ValidateSet("good",
                      "warning", 
                      "danger"
                      )]
-        [Alias("Color","Colour")]
         [String]
         $Severity,
+        
+        [Parameter(Mandatory=$true,
+                    ParameterSetName='ColourOrSeverity'
+                    )]
+        [Alias("Colour")]
+        [string]
+        $Color,
 
         [Parameter(Mandatory=$false)]
         [String]
@@ -246,13 +253,19 @@ function New-SlackRichNotification
     }
     Process
     {
+        #consolidate the colour and severity parameters for the API.
+        If($Severity -match 'good|warning|danger')
+        {
+            $Color = $Severity
+        }
+        
         $SlackNotification = @{
             username = $UserName
             icon_url = $IconUrl
             attachments = @(
                 @{                    
                     fallback = $Fallback
-                    color = $Severity
+                    color = $Color
                     pretext = $Pretext
                     author_name = $AuthorName
                     author_link = $AuthorLink
