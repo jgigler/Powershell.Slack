@@ -63,8 +63,10 @@ function Send-SlackNotification
 A plain-text summary of the attachment. This text will be used in clients that don't show formatted text (eg. IRC, mobile notifications) and should not contain any markup.
 
 .PARAMETER Severity
-This value is used to color the border along the left side of the message attachment. At this stage only good, warning and danger are accepted in this function; even though the Slack API allows for Hex Colour Code.
+This value is used to color the border along the left side of the message attachment. This parameter cannot be used in conjunction with the "Color" parameter. Only good,bad and warning are accepted by this parameter.
 
+.PARAMETER Colour
+This value is used to color the border along the left side of the message attachment. Use Hex Web Colors to define the color. This parameter cannot be used in conjuction with the Severity Parameter.
 .PARAMETER Pretext
 This is optional text that appears above the message attachment block.
 
