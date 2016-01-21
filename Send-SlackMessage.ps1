@@ -38,9 +38,13 @@ function Send-SlackNotification
     }
     Process
     {
+        $json = $Notification | ConvertTo-Json -Depth 4
+        $json = [regex]::replace($json,'\\u[a-fA-F0-9]{4}',{[char]::ConvertFromUtf32(($args[0].Value -replace '\\u','0x'))})
+        $json = $json -replace "\\\\", "\"
+        
         try
         {
-            Invoke-RestMethod -Method POST -Uri $Url -Body ($Notification | ConvertTo-Json -Depth 4)
+            Invoke-RestMethod -Method POST -Uri $Url -Body $json
         }
 
         catch
