@@ -67,6 +67,7 @@ This value is used to color the border along the left side of the message attach
 
 .PARAMETER Colour
 This value is used to color the border along the left side of the message attachment. Use Hex Web Colors to define the color. This parameter cannot be used in conjuction with the Severity Parameter.
+
 .PARAMETER Pretext
 This is optional text that appears above the message attachment block.
 
@@ -156,17 +157,19 @@ Since the "short" boolean parameter has been speified these two fields will be d
 
 
 .LINK
+https://github.com/jgigler/Powershell.Slack
+
+.LINK
 https://api.slack.com/docs/attachments
 
 .LINK
 https://api.slack.com/methods/chat.postMessage
-
-
-
 #>
 function New-SlackRichNotification
 {
-    [CmdletBinding(SupportsShouldProcess=$false)]
+    [CmdletBinding(SupportsShouldProcess=$false,
+                    DefaultParameterSetName=’SeverityOrColour’
+                    )]
     [OutputType([System.Collections.Hashtable])]
     Param
     (
@@ -177,7 +180,7 @@ function New-SlackRichNotification
         [String]
         $Fallback,
         
-        [Parameter(Mandatory=$true,
+        [Parameter(Mandatory=$false,
                     ParameterSetName='SeverityOrColour')]
         [ValidateSet("good",
                      "warning", 
@@ -186,7 +189,7 @@ function New-SlackRichNotification
         [String]
         $Severity,
         
-        [Parameter(Mandatory=$true,
+        [Parameter(Mandatory=$false,
                     ParameterSetName='ColourOrSeverity'
                     )]
         [Alias("Colour")]
