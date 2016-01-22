@@ -38,9 +38,13 @@ function Send-SlackNotification
     }
     Process
     {
+        $json = $Notification | ConvertTo-Json -Depth 4
+        $json = [regex]::replace($json,'\\u[a-fA-F0-9]{4}',{[char]::ConvertFromUtf32(($args[0].Value -replace '\\u','0x'))})
+        $json = $json -replace "\\\\", "\"
+        
         try
         {
-            Invoke-RestMethod -Method POST -Uri $Url -Body ($Notification | ConvertTo-Json -Depth 4)
+            Invoke-RestMethod -Method POST -Uri $Url -Body $json
         }
 
         catch
@@ -63,7 +67,10 @@ function Send-SlackNotification
 A plain-text summary of the attachment. This text will be used in clients that don't show formatted text (eg. IRC, mobile notifications) and should not contain any markup.
 
 .PARAMETER Severity
-This value is used to color the border along the left side of the message attachment. At this stage only good, warning and danger are accepted in this function; even though the Slack API allows for Hex Colour Code.
+This value is used to color the border along the left side of the message attachment. This parameter cannot be used in conjunction with the "Color" parameter. Only good,bad and warning are accepted by this parameter.
+
+.PARAMETER Colour
+This value is used to color the border along the left side of the message attachment. Use Hex Web Colors to define the color. This parameter cannot be used in conjuction with the Severity Parameter.
 
 .PARAMETER Pretext
 This is optional text that appears above the message attachment block.
@@ -154,17 +161,19 @@ Since the "short" boolean parameter has been speified these two fields will be d
 
 
 .LINK
+https://github.com/jgigler/Powershell.Slack
+
+.LINK
 https://api.slack.com/docs/attachments
 
 .LINK
 https://api.slack.com/methods/chat.postMessage
-
-
-
 #>
 function New-SlackRichNotification
 {
-    [CmdletBinding(SupportsShouldProcess=$false)]
+    [CmdletBinding(SupportsShouldProcess=$false,
+                    DefaultParameterSetName=’SeverityOrColour’
+                    )]
     [OutputType([System.Collections.Hashtable])]
     Param
     (
@@ -175,14 +184,21 @@ function New-SlackRichNotification
         [String]
         $Fallback,
         
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory=$false,
+                    ParameterSetName='SeverityOrColour')]
         [ValidateSet("good",
                      "warning", 
                      "danger"
                      )]
-        [Alias("Color","Colour")]
         [String]
         $Severity,
+        
+        [Parameter(Mandatory=$false,
+                    ParameterSetName='ColourOrSeverity'
+                    )]
+        [Alias("Colour")]
+        [string]
+        $Color,
 
         [Parameter(Mandatory=$false)]
         [String]
@@ -246,13 +262,19 @@ function New-SlackRichNotification
     }
     Process
     {
+        #consolidate the colour and severity parameters for the API.
+        If($Severity -match 'good|warning|danger')
+        {
+            $Color = $Severity
+        }
+        
         $SlackNotification = @{
             username = $UserName
             icon_url = $IconUrl
             attachments = @(
                 @{                    
                     fallback = $Fallback
-                    color = $Severity
+                    color = $Color
                     pretext = $Pretext
                     author_name = $AuthorName
                     author_link = $AuthorLink
