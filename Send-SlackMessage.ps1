@@ -271,6 +271,7 @@ function New-SlackRichNotification
         $SlackNotification = @{
             username = $UserName
             icon_url = $IconUrl
+            channel = $Channel
             attachments = @(
                 @{                    
                     fallback = $Fallback
